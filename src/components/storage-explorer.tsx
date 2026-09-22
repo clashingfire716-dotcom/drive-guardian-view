@@ -1,17 +1,17 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
-  Archive, ArrowLeft, ArrowRight, Bot, Box, BrainCircuit, ChevronDown, ChevronRight, CircleGauge,
-  Cloud, Code2, Copy, Database, Eye, File, FileArchive, FileCheck2, Film, Folder, FolderOpen,
-  HardDrive, Info, Layers3, ListFilter, Maximize2, Moon, MoreHorizontal, PanelLeft, PanelRight,
-  Pause, Play, Plus, RefreshCw, Search, ShieldCheck, Sun, Terminal, Trash2, X, Zap
+  Archive, ArrowDownWideNarrow, ArrowLeft, ArrowRight, Box, BrainCircuit, ChevronDown, ChevronRight, CircleGauge,
+  Cloud, Code2, Copy, Database, Eye, File, FileArchive, FileCheck2, Folder, FolderOpen,
+  HardDrive, History, Info, Layers3, ListFilter, Maximize2, Moon, PanelLeft, PanelRight,
+  Pause, Play, Plus, RefreshCw, Search, ShieldCheck, Sun, Terminal, Trash2, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuShortcut, ContextMenuTrigger } from "@/components/ui/context-menu";
-import { diskRoot, findNode, findPath, flatten, formatSize, volumes, type Category, type DiskNode } from "@/lib/storage-data";
+import { diskRoot, findNode, findPath, flatten, formatSize, type Category, type DiskNode } from "@/lib/storage-data";
 import { cn } from "@/lib/utils";
 
 const categoryStyle: Record<Category, string> = {
@@ -80,13 +80,14 @@ function SearchBox({ query, setQuery }: { query: string; setQuery: (s: string) =
   </div>;
 }
 
-function Toolbar({ sidebar, setSidebar, inspector, setInspector, view, setView, query, setQuery, paused, setPaused, collectorCount, collectorSize, onCollector, dark, setDark }: any) {
+function Toolbar({ sidebar, setSidebar, inspector, setInspector, view, setView, query, setQuery, paused, setPaused, collectorCount, collectorSize, onCollector, dark, setDark, onUtility, onFocus }: any) {
   const [volume, setVolume] = useState("mac");
   return <header className="toolbar-material relative z-30 flex h-[70px] shrink-0 items-center gap-3 border-b border-border/70 px-4">
     <TrafficLights/><div className="mx-1 h-7 w-px bg-border/60"/><IconButton label="Toggle sidebar" active={!sidebar} onClick={() => setSidebar(!sidebar)}><PanelLeft/></IconButton>
     <div className="relative"><select aria-label="Storage volume" value={volume} onChange={(e) => setVolume(e.target.value)} className="h-9 appearance-none rounded-md border border-input bg-background/45 py-1 pl-9 pr-8 text-[13px] font-semibold outline-none"><option value="mac">Macintosh HD</option><option value="t7">Samsung T7 2TB</option><option value="custom">Scan Custom Folder…</option></select><HardDrive className="pointer-events-none absolute left-2.5 top-2.5 size-4 text-muted-foreground"/><ChevronDown className="pointer-events-none absolute right-2 top-2.5 size-4 text-muted-foreground"/></div>
     <div className="hidden min-w-[145px] xl:block"><div className="flex items-center gap-1.5 text-[12px] font-medium"><span className={cn("status-dot", paused && "bg-muted-foreground")}/>{paused ? "Scan paused" : "Scanning Macintosh HD"}</div><div className="mono mt-0.5 text-[10px] text-muted-foreground">85,420 files/sec · 3.2s elapsed</div></div>
     <IconButton label={paused ? "Resume scan" : "Pause scan"} onClick={() => setPaused(!paused)}>{paused ? <Play/> : <Pause/>}</IconButton><IconButton label="Rescan"><RefreshCw/></IconButton>
+    <div className="toolbar-tools"><IconButton label="Show hidden space" onClick={() => onUtility("Hidden and purgeable APFS space is now visible")}><Eye/></IconButton><IconButton label="APFS snapshot history" onClick={() => onUtility("3 local APFS snapshots · 18.6 GB reclaimable")}><History/></IconButton><IconButton label="Sort largest first" onClick={() => onUtility("Items sorted by allocated size")}><ArrowDownWideNarrow/></IconButton><IconButton label="Focus visualization" onClick={onFocus}><Maximize2/></IconButton></div>
     <div className="segmented ml-auto"><button className={view === "treemap" ? "selected" : ""} onClick={() => setView("treemap")}><Layers3/>TreeMap <kbd>⌘1</kbd></button><button className={view === "sunmap" ? "selected" : ""} onClick={() => setView("sunmap")}><CircleGauge/>SunMap <kbd>⌘2</kbd></button></div>
     <SearchBox query={query} setQuery={setQuery}/>
     <Button variant="outline" className="h-8 bg-background/45 px-2.5 text-xs" onClick={onCollector}><Archive/><span className="hidden 2xl:inline">{collectorCount ? `${collectorCount} items · ${formatSize(collectorSize)}` : "Collector"}</span>{collectorCount > 0 && <span className="counter-badge">{collectorCount}</span>}</Button>
@@ -102,16 +103,24 @@ function NodeMenu({ node, children, onSelect, onDrill, onQuickLook, onStage }: a
   return <ContextMenu><ContextMenuTrigger asChild>{children}</ContextMenuTrigger><ContextMenuContent className="w-60"><ContextMenuItem onSelect={() => onSelect(node)}><FolderOpen className="mr-2 size-4"/>Reveal in Finder</ContextMenuItem><ContextMenuItem onSelect={() => onQuickLook(node)}><Eye className="mr-2 size-4"/>Quick Look<ContextMenuShortcut>Space</ContextMenuShortcut></ContextMenuItem><ContextMenuItem onSelect={() => navigator.clipboard?.writeText(`/Volumes/Macintosh HD/${node.name}`)}><Copy className="mr-2 size-4"/>Copy Path</ContextMenuItem><ContextMenuSeparator/><ContextMenuItem disabled={node.protected} onSelect={() => onStage(node)}><Archive className="mr-2 size-4"/>Add to Collector</ContextMenuItem><ContextMenuItem><Terminal className="mr-2 size-4"/>Open in Terminal</ContextMenuItem><ContextMenuItem><BrainCircuit className="mr-2 size-4"/>Ask Disk Advisor</ContextMenuItem>{node.type === "folder" && <ContextMenuItem onSelect={() => onDrill(node)}><Search className="mr-2 size-4"/>Scan Folder Only</ContextMenuItem>}<ContextMenuSeparator/><ContextMenuItem disabled={node.protected} className="text-destructive" onSelect={() => onStage(node)}><Trash2 className="mr-2 size-4"/>Move to Trash<ContextMenuShortcut>⌘⌫</ContextMenuShortcut></ContextMenuItem></ContextMenuContent></ContextMenu>;
 }
 
+function TreemapTile({ box, selected, onSelect, onDrill, onQuickLook, onStage, depth = 0 }: { box: TreemapBox; selected: DiskNode; onSelect: (node: DiskNode) => void; onDrill: (node: DiskNode) => void; onQuickLook: (node: DiskNode) => void; onStage: (node: DiskNode) => void; depth?: number }) {
+  const childBoxes = box.node.children?.length && depth < 3 && box.w > 10 && box.h > 13 ? layoutTreemap(box.node.children, 0, 0, 100, 100) : [];
+  return <NodeMenu node={box.node} onSelect={onSelect} onDrill={onDrill} onQuickLook={onQuickLook} onStage={onStage}><div
+    role="button" tabIndex={0} aria-label={`${box.node.name}, ${formatSize(box.node.size)}`}
+    className={cn("treemap-node group absolute overflow-hidden border border-canvas transition-[filter,transform] hover:z-10 hover:brightness-110 focus:z-20 focus:outline-none focus:ring-2 focus:ring-ring", categoryStyle[box.node.category], selected?.id === box.node.id && "z-20 ring-2 ring-selection ring-inset", depth > 0 && "nested-node")}
+    style={{ left: `${box.x}%`, top: `${box.y}%`, width: `${box.w}%`, height: `${box.h}%` }}
+    onClick={(event) => { event.stopPropagation(); onSelect(box.node); }} onDoubleClick={(event) => { event.stopPropagation(); onDrill(box.node); }} onKeyDown={(event) => { if (event.key === "Enter") onDrill(box.node); }}>
+    <span className="node-shine"/><span className={cn("node-label", depth > 0 && "compact")}><b>{box.node.name}</b><small className="mono">{formatSize(box.node.size)}</small></span>
+    {childBoxes.length > 0 && <div className="treemap-children">{childBoxes.map((childBox) => <TreemapTile key={childBox.node.id} box={childBox} selected={selected} onSelect={onSelect} onDrill={onDrill} onQuickLook={onQuickLook} onStage={onStage} depth={depth + 1}/>)}</div>}
+    <span className="node-tooltip"><b>{box.node.name}</b><span>{formatSize(box.node.size)} · {categoryLabel[box.node.category]}</span></span>
+  </div></NodeMenu>;
+}
+
 function Treemap({ current, selected, onSelect, onDrill, onQuickLook, onStage }: any) {
   const nodes = current.children?.length ? current.children : [current];
   const boxes = layoutTreemap(nodes, 0, 0, 100, 100);
   return <div className="relative h-full w-full overflow-hidden bg-canvas p-2"><div className="relative h-full w-full overflow-hidden rounded-md bg-canvas-inner shadow-inner">
-    {boxes.map((box) => <NodeMenu key={box.node.id} node={box.node} onSelect={onSelect} onDrill={onDrill} onQuickLook={onQuickLook} onStage={onStage}><button
-      className={cn("treemap-node group absolute overflow-hidden border border-canvas transition-[filter,transform] hover:z-10 hover:brightness-110 focus:z-20 focus:outline-none focus:ring-2 focus:ring-ring", categoryStyle[box.node.category], selected?.id === box.node.id && "z-20 ring-2 ring-selection ring-inset")}
-      style={{ left: `${box.x}%`, top: `${box.y}%`, width: `${box.w}%`, height: `${box.h}%` }} onClick={() => onSelect(box.node)} onDoubleClick={() => onDrill(box.node)}>
-      <span className="node-shine"/><span className="relative z-10 flex h-full flex-col items-start p-3 text-left"><b className="max-w-full truncate text-[14px]">{box.node.name}</b><small className="mono mt-0.5 opacity-80">{formatSize(box.node.size)}</small>{box.w > 20 && box.h > 25 && <span className="mt-auto text-[11px] font-medium opacity-70">{box.node.type === "folder" ? `${box.node.children?.length ?? 4} items` : "File"}</span>}</span>
-      <span className="node-tooltip"><b>{box.node.name}</b><span>{formatSize(box.node.size)} · {categoryLabel[box.node.category]}</span></span>
-    </button></NodeMenu>)}
+    {boxes.map((box) => <TreemapTile key={box.node.id} box={box} selected={selected} onSelect={onSelect} onDrill={onDrill} onQuickLook={onQuickLook} onStage={onStage}/>)}
   </div></div>;
 }
 
@@ -162,7 +171,7 @@ function PurgeSheet({ open, setOpen, items, onPurge }: any) {
 
 export function StorageExplorer() {
   const [dark,setDark]=useState(true),[sidebar,setSidebar]=useState(true),[inspector,setInspector]=useState(true),[view,setView]=useState<"treemap"|"sunmap">("treemap"),[paused,setPaused]=useState(false),[lens,setLens]=useState("all"),[query,setQuery]=useState(""),[currentId,setCurrentId]=useState("root"),[selected,setSelected]=useState<DiskNode>(diskRoot.children?.[0]??diskRoot),[history,setHistory]=useState(["root"]),[historyIndex,setHistoryIndex]=useState(0),[collector,setCollector]=useState<DiskNode[]>([]),[collectorOpen,setCollectorOpen]=useState(false),[quickOpen,setQuickOpen]=useState(false),[quickNode,setQuickNode]=useState<DiskNode|null>(null),[purgeOpen,setPurgeOpen]=useState(false),[reclaimed,setReclaimed]=useState(0),[toast,setToast]=useState("");
-  const searchRef=useRef<HTMLInputElement|null>(null); const current=findNode(diskRoot,currentId)??diskRoot; const path=findPath(diskRoot,currentId)??[diskRoot];
+  const current=findNode(diskRoot,currentId)??diskRoot; const path=findPath(diskRoot,currentId)??[diskRoot];
   const visibleCurrent=useMemo(()=>{ if(!query.trim()&&lens==="all") return current; const q=query.toLowerCase(); let nodes=flatten(diskRoot).filter(n=>n.id!=="root"); if(q){nodes=nodes.filter(n=>{const hay=`${n.name} ${categoryLabel[n.category]} ${n.safe?"safe delete cache":""}`.toLowerCase();return q.split(" ").every(word=>hay.includes(word)||((word.includes("large")||word.includes("1gb"))&&n.size>1e9)||((word.includes("developer")||word.includes("xcode"))&&n.category==="developer")||((word.includes("4k")||word.includes("video"))&&n.category==="media"));});} if(lens==="large")nodes=nodes.filter(n=>n.size>1e9); if(lens==="developer")nodes=nodes.filter(n=>n.category==="developer"); if(lens==="archives")nodes=nodes.filter(n=>/archive|dmg|installer|zip/i.test(n.name)); if(lens==="dormant")nodes=nodes.filter(n=>n.safe); if(lens==="leftovers")nodes=nodes.filter(n=>n.safe&&n.category==="apps"); return {...current,name:q?`Search: ${query}`:current.name,size:nodes.reduce((s,n)=>s+n.size,0),children:nodes.slice(0,14)};},[current,query,lens]);
   const navigate=useCallback((id:string)=>{setCurrentId(id);setQuery("");setLens("all");setHistory(h=>[...h.slice(0,historyIndex+1),id]);setHistoryIndex(i=>i+1)},[historyIndex]);
   const drill=(node:DiskNode)=>{setSelected(node);if(node.type==="folder"&&node.children?.length)navigate(node.id);else{setQuickNode(node);setQuickOpen(true)}};
@@ -173,7 +182,7 @@ export function StorageExplorer() {
   const goHistory=(delta:number)=>{const next=historyIndex+delta;if(next>=0&&next<history.length){setHistoryIndex(next);setCurrentId(history[next])}};
   const totalCollector=collector.reduce((s,n)=>s+n.size,0);
   return <main className="app-desktop"><section className="mac-window">
-    <Toolbar sidebar={sidebar} setSidebar={setSidebar} inspector={inspector} setInspector={setInspector} view={view} setView={setView} query={query} setQuery={setQuery} paused={paused} setPaused={setPaused} collectorCount={collector.length} collectorSize={totalCollector} onCollector={()=>setCollectorOpen(v=>!v)} dark={dark} setDark={setDark}/>
+    <Toolbar sidebar={sidebar} setSidebar={setSidebar} inspector={inspector} setInspector={setInspector} view={view} setView={setView} query={query} setQuery={setQuery} paused={paused} setPaused={setPaused} collectorCount={collector.length} collectorSize={totalCollector} onCollector={()=>setCollectorOpen(v=>!v)} dark={dark} setDark={setDark} onUtility={setToast} onFocus={()=>{setSidebar(false);setInspector(false);setCollectorOpen(false)}}/>
     <div className="flex min-h-0 flex-1"><Sidebar collapsed={!sidebar} currentLens={lens} setLens={setLens} onScan={()=>setToast("Folder picker opened — demo mode")}/><section className="flex min-w-0 flex-1 flex-col"><Breadcrumbs path={path} onNavigate={navigate} canBack={historyIndex>0} canForward={historyIndex<history.length-1} onBack={()=>goHistory(-1)} onForward={()=>goHistory(1)} onUp={()=>path.length>1&&navigate(path[path.length-2].id)}/><div className="relative min-h-0 flex-1">{view==="treemap"?<Treemap current={visibleCurrent} selected={selected} onSelect={setSelected} onDrill={drill} onQuickLook={(n:DiskNode)=>{setQuickNode(n);setQuickOpen(true)}} onStage={stage}/>:<SunMap current={visibleCurrent} selected={selected} onSelect={setSelected} onDrill={drill} onQuickLook={()=>{}} onStage={stage} onUp={()=>path.length>1&&navigate(path[path.length-2].id)}/>}<div className="legend">{Object.entries(categoryLabel).map(([key,label])=><span key={key}><i className={categoryStyle[key as Category]}/>{label}</span>)}</div>{query&&<div className="result-count">{visibleCurrent.children?.length??0} matches</div>}</div></section>{inspector&&<Inspector node={selected} onStage={stage}/>}</div>
     <Collector open={collectorOpen} items={collector} onRemove={(id:string)=>setCollector(c=>c.filter(n=>n.id!==id))} onReview={()=>setPurgeOpen(true)} onClose={()=>setCollectorOpen(false)}/>
     <footer className="status-bar"><span><span className="status-dot"/>Scan complete</span><span className="mono">642 GB used · {formatSize(352e9+reclaimed)} available</span><span>1,847,392 items indexed</span></footer>

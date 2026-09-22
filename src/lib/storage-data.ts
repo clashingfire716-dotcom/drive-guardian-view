@@ -44,4 +44,4 @@ export const diskRoot: DiskNode = node("root", "Macintosh HD", 642, "system", "f
 export const formatSize = (size: number) => size >= TB ? `${(size / TB).toFixed(2)} TB` : size >= GB ? `${(size / GB).toFixed(size >= 100 * GB ? 0 : 1)} GB` : `${(size / 1_000_000).toFixed(0)} MB`;
 export const flatten = (root: DiskNode): DiskNode[] => [root, ...(root.children?.flatMap(flatten) ?? [])];
 export const findNode = (root: DiskNode, id: string): DiskNode | undefined => root.id === id ? root : root.children?.map((child) => findNode(child, id)).find(Boolean);
-export const findPath = (root: DiskNode, id: string): DiskNode[] | undefined => { if (root.id === id) return [root]; for (const child of root.children ?? []) { const result = findPath(child, id); if (result) return [root, ...result]; } };
+export const findPath = (root: DiskNode, id: string): DiskNode[] | undefined => { if (root.id === id) return [root]; for (const child of root.children ?? []) { const result = findPath(child, id); if (result) return [root, ...result]; } return undefined; };
