@@ -29,15 +29,57 @@ function layoutTreemap(nodes: DiskNode[], x: number, y: number, w: number, h: nu
   if (!nodes.length) return [];
   const total = nodes.reduce((sum, item) => sum + item.size, 0);
   if (total <= 0) return [];
-  const horizontal = w >= h;
-  let cursor = horizontal ? x : y;
-  return nodes.map((item, index) => {
-    const raw = item.size / total;
-    const length = index === nodes.length - 1 ? (horizontal ? x + w : y + h) - cursor : (horizontal ? w : h) * raw;
-    const box = horizontal ? { node: item, x: cursor, y, w: length, h } : { node: item, x, y: cursor, w, h: length };
-    cursor += length;
-    return box;
-  });
+  const items = [...nodes]
+    .sort((a, b) => b.size - a.size)
+    .map((node) => ({ node, area: (node.size / total) * w * h }));
+  const boxes: TreemapBox[] = [];
+
+  const worstRatio = (row: typeof items, side: number) => {
+    const sum = row.reduce((value, item) => value + item.area, 0);
+    const largest = Math.max(...row.map((item) => item.area));
+    const smallest = Math.min(...row.map((item) => item.area));
+    return Math.max((side * side * largest) / (sum * sum), (sum * sum) / (side * side * smallest));
+  };
+  const placeRow = (row: typeof items, rect: { x: number; y: number; w: number; h: number }) => {
+    const area = row.reduce((value, item) => value + item.area, 0);
+    if (rect.w >= rect.h) {
+      const rowWidth = area / rect.h;
+      let cursor = rect.y;
+      row.forEach((item, index) => {
+        const itemHeight = index === row.length - 1 ? rect.y + rect.h - cursor : item.area / rowWidth;
+        boxes.push({ node: item.node, x: rect.x, y: cursor, w: rowWidth, h: itemHeight });
+        cursor += itemHeight;
+      });
+      return { x: rect.x + rowWidth, y: rect.y, w: Math.max(0, rect.w - rowWidth), h: rect.h };
+    }
+    const rowHeight = area / rect.w;
+    let cursor = rect.x;
+    row.forEach((item, index) => {
+      const itemWidth = index === row.length - 1 ? rect.x + rect.w - cursor : item.area / rowHeight;
+      boxes.push({ node: item.node, x: cursor, y: rect.y, w: itemWidth, h: rowHeight });
+      cursor += itemWidth;
+    });
+    return { x: rect.x, y: rect.y + rowHeight, w: rect.w, h: Math.max(0, rect.h - rowHeight) };
+  };
+
+  let remaining = items;
+  let row: typeof items = [];
+  let rect = { x, y, w, h };
+  while (remaining.length) {
+    const candidate = remaining[0];
+    if (!candidate) break;
+    const nextRow = [...row, candidate];
+    const side = Math.max(0.001, Math.min(rect.w, rect.h));
+    if (!row.length || worstRatio(nextRow, side) <= worstRatio(row, side)) {
+      row = nextRow;
+      remaining = remaining.slice(1);
+    } else {
+      rect = placeRow(row, rect);
+      row = [];
+    }
+  }
+  if (row.length) placeRow(row, rect);
+  return boxes;
 }
 
 function TrafficLights() { return <div className="flex gap-2" aria-label="Window controls"><span className="traffic bg-close"/><span className="traffic bg-minimize"/><span className="traffic bg-zoom"/></div>; }
@@ -105,13 +147,14 @@ function NodeMenu({ node, children, onSelect, onDrill, onQuickLook, onStage }: a
 }
 
 function TreemapTile({ box, selected, onSelect, onDrill, onQuickLook, onStage, depth = 0 }: { box: TreemapBox; selected: DiskNode; onSelect: (node: DiskNode) => void; onDrill: (node: DiskNode) => void; onQuickLook: (node: DiskNode) => void; onStage: (node: DiskNode) => void; depth?: number }) {
-  const childBoxes = box.node.children?.length && depth < 3 && box.w > 10 && box.h > 13 ? layoutTreemap(box.node.children, 0, 0, 100, 100) : [];
+  const childBoxes = box.node.children?.length && depth < 2 && box.w > 9 && box.h > 9 ? layoutTreemap(box.node.children, 0, 0, 100, 100) : [];
+  const isFolder = box.node.type === "folder";
   return <NodeMenu node={box.node} onSelect={onSelect} onDrill={onDrill} onQuickLook={onQuickLook} onStage={onStage}><div
     role="button" tabIndex={0} aria-label={`${box.node.name}, ${formatSize(box.node.size)}`}
-    className={cn("treemap-node group absolute overflow-hidden border border-canvas transition-[filter,transform] hover:z-10 hover:brightness-110 focus:z-20 focus:outline-none focus:ring-2 focus:ring-ring", categoryStyle[box.node.category], selected?.id === box.node.id && "z-20 ring-2 ring-selection ring-inset", depth > 0 && "nested-node")}
+    className={cn("treemap-node group absolute overflow-hidden transition-[filter,transform] hover:z-10 hover:brightness-110 focus:z-20 focus:outline-none focus:ring-2 focus:ring-ring", categoryStyle[box.node.category], selected?.id === box.node.id && "z-20 ring-2 ring-selection ring-inset", depth > 0 && "nested-node", isFolder ? "folder-node" : "file-node")}
     style={{ left: `${box.x}%`, top: `${box.y}%`, width: `${box.w}%`, height: `${box.h}%` }}
     onClick={(event) => { event.stopPropagation(); onSelect(box.node); }} onDoubleClick={(event) => { event.stopPropagation(); onDrill(box.node); }} onKeyDown={(event) => { if (event.key === "Enter") onDrill(box.node); }}>
-    <span className="node-shine"/><span className={cn("node-label", depth > 0 && "compact")}><b>{box.node.name}</b><small className="mono">{formatSize(box.node.size)}</small></span>
+    <span className="node-shine"/><span className={cn("node-label", depth > 0 && "compact")}><span className="node-icon">{isFolder?<Folder/>:<File/>}</span><b>{box.node.name}</b><small className="mono">{formatSize(box.node.size)}</small></span>
     {childBoxes.length > 0 && <div className="treemap-children">{childBoxes.map((childBox) => <TreemapTile key={childBox.node.id} box={childBox} selected={selected} onSelect={onSelect} onDrill={onDrill} onQuickLook={onQuickLook} onStage={onStage} depth={depth + 1}/>)}</div>}
     <span className="node-tooltip"><b>{box.node.name}</b><span>{formatSize(box.node.size)} · {categoryLabel[box.node.category]}</span></span>
   </div></NodeMenu>;
