@@ -30,7 +30,7 @@ export const diskRoot: DiskNode = node("root", "Macintosh HD", 642, "system", "f
       ] }),
       node("movies", "Movies", 82.7, "media", "folder", { children: [node("finalcut", "Final Cut Library.fcpbundle", 46.8, "media", "file"), node("clips", "4K Drone Footage", 28.4, "media", "folder"), node("screen", "Screen Recordings", 7.5, "media", "folder", { safe: true })] }),
       node("documents", "Documents", 54.9, "documents", "folder", { children: [node("projects", "Client Projects", 31.2, "documents", "folder"), node("archives-zip", "Archives", 14.7, "documents", "folder", { safe: true }), node("design", "Design Library", 9, "documents", "folder")] }),
-      node("downloads", "Downloads", 28.1, "other", "folder", { children: [node("xcode-dmg", "Xcode_16.0.dmg", 12.4, "apps", "file", { safe: true }), node("installers", "Installers", 9.2, "apps", "folder", { safe: true }), node("misc", "Unsorted", 6.5, "other", "folder")] }),
+       node("downloads", "Downloads", 28.1, "other", "folder", { children: [node("xcode-dmg", "Xcode_16.0.dmg", 12.4, "apps", "file", { safe: true }), node("duplicate-xcode-dmg", "Xcode_16.0 copy.dmg", 8.4, "apps", "file", { safe: true }), node("duplicate-archive", "Project Assets copy.zip", 4.3, "documents", "file", { safe: true }), node("duplicate-installer", "CreativeCloud Installer (1).dmg", 2.1, "apps", "file", { safe: true }), node("misc", "Unsorted", 0.9, "other", "folder")] }),
       node("pictures", "Pictures", 18.1, "media", "folder")
     ] })
   ] }),
