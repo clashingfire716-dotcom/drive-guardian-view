@@ -5,3 +5,7 @@
 - [x] Refine the treemap with balanced rectangles, calmer hierarchy, adaptive labels, and native macOS-style spacing.
 - [ ] Research DaisyDisk, Dissect, and Apple HIG for useful toolbar capabilities and add the best frontend-safe controls.
 - [ ] Validate the complete interaction flow and responsive layout.
+- [ ] Add ranked inspector children, cross-hover map highlighting, action bar, and purge impact guidance.
+- [ ] Add snapshot, duplicate, recent-scan, and external-drive eject controls.
+- [ ] Add category/age color modes and simulated elevated scanning.
+- [ ] Validate the enhanced inspector, sidebar, toolbar, and both visualizations.
