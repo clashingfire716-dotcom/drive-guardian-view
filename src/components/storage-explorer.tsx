@@ -101,11 +101,12 @@ function IconButton({ label, children, active, onClick, disabled }: { label: str
 
 function SourceIcon({ type }: { type: "disk" | "external" | "cloud" }) { const Icon = type === "cloud" ? Cloud : type === "external" ? Database : HardDrive; return <Icon className="size-[17px]"/>; }
 
-function Sidebar({ collapsed, currentLens, setLens, onScan }: { collapsed: boolean; currentLens: string; setLens: (id: string) => void; onScan: () => void }) {
+function Sidebar({ collapsed, currentLens, setLens, onScan, onRecent, onEject }: { collapsed: boolean; currentLens: string; setLens: (id: string) => void; onScan: () => void; onRecent: (id: string) => void; onEject: () => void }) {
   const lenses = [
     ["large", "Large Files", "> 1 GB", CircleGauge], ["dormant", "Dormant Files", "> 180 days", Moon],
     ["developer", "Developer Artifacts", "79.3 GB", Code2], ["archives", "Installers & Archives", "36.3 GB", Archive],
-    ["leftovers", "Application Leftovers", "8.7 GB", Box],
+    ["leftovers", "Application Leftovers", "8.7 GB", Box], ["snapshots", "APFS Local Snapshots", "18.6 GB", History],
+    ["duplicates", "Duplicate Files", "27.1 GB", Files],
   ] as const;
   if (collapsed) return null;
   return <aside className="sidebar-material flex min-h-0 w-[224px] shrink-0 flex-col border-r border-border/70 px-3 pb-3 pt-2">
@@ -114,12 +115,14 @@ function Sidebar({ collapsed, currentLens, setLens, onScan }: { collapsed: boole
       <span className="drive-icon"><SourceIcon type="disk"/></span><span className="min-w-0 flex-1 text-left"><b>Macintosh HD</b><small>642 GB of 994 GB</small></span>
     </button>
     <div className="storage-meter mx-2 mb-3"><span style={{ width: "64.6%" }}/></div>
-    <button className="source-row"><span className="drive-icon"><SourceIcon type="external"/></span><span className="min-w-0 flex-1 text-left"><b>External Drives</b><small>Samsung T7</small></span><ChevronRight className="size-3.5 opacity-45"/></button>
+    <div className="source-row group"><span className="drive-icon"><SourceIcon type="external"/></span><button className="min-w-0 flex-1 text-left" onClick={() => setLens("external")}><b>Samsung T7</b><small>1.14 TB of 2 TB</small></button><IconButton label="Eject Samsung T7" onClick={onEject}><Eject className="size-3.5"/></IconButton></div>
     <button className="source-row"><span className="drive-icon"><SourceIcon type="cloud"/></span><span className="min-w-0 flex-1 text-left"><b>iCloud Drive</b><small>126 GB used</small></span></button>
     <p className="section-label mt-5">Smart Lenses</p>
     <div className="space-y-0.5">
       {lenses.map(([id, label, detail, Icon]) => <button key={id} className={cn("lens-row", currentLens === id && "lens-row-active")} onClick={() => setLens(id)}><Icon className="size-[17px]"/><span className="flex-1 truncate text-left">{label}</span><small>{detail}</small></button>)}
     </div>
+    <p className="section-label mt-5">Recent Scans</p>
+    <div className="space-y-0.5">{[["downloads","~/Downloads"],["developer","~/Developer"],["caches","~/Library/Caches"]].map(([id,label]) => <button key={id} className="recent-row" onClick={() => onRecent(id)}><Clock3/><span>{label}</span><ChevronRight/></button>)}</div>
     <div className="mt-auto pt-4"><Button variant="outline" className="h-9 w-full justify-start bg-background/30 text-[13px]" onClick={onScan}><Plus/>Scan Folder…</Button></div>
   </aside>;
 }
@@ -135,14 +138,16 @@ function SearchBox({ query, setQuery }: { query: string; setQuery: (s: string) =
   </div>;
 }
 
-function Toolbar({ sidebar, setSidebar, inspector, setInspector, view, setView, query, setQuery, paused, setPaused, collectorCount, collectorSize, onCollector, dark, setDark, onUtility, onFocus }: any) {
+function Toolbar({ sidebar, setSidebar, inspector, setInspector, view, setView, query, setQuery, paused, setPaused, collectorCount, collectorSize, onCollector, dark, setDark, onUtility, onFocus, colorMode, setColorMode, elevated, setElevated }: any) {
   const [volume, setVolume] = useState("mac");
   return <header className="toolbar-material relative z-30 flex h-[70px] shrink-0 items-center gap-3 border-b border-border/70 px-4">
     <TrafficLights/><div className="mx-1 h-7 w-px bg-border/60"/><IconButton label="Toggle sidebar" active={!sidebar} onClick={() => setSidebar(!sidebar)}><PanelLeft/></IconButton>
     <div className="relative"><select aria-label="Storage volume" value={volume} onChange={(e) => setVolume(e.target.value)} className="h-9 appearance-none rounded-md border border-input bg-background/45 py-1 pl-9 pr-8 text-[13px] font-semibold outline-none"><option value="mac">Macintosh HD</option><option value="t7">Samsung T7 2TB</option><option value="custom">Scan Custom Folder…</option></select><HardDrive className="pointer-events-none absolute left-2.5 top-2.5 size-4 text-muted-foreground"/><ChevronDown className="pointer-events-none absolute right-2 top-2.5 size-4 text-muted-foreground"/></div>
     <div className="hidden min-w-[145px] xl:block"><div className="flex items-center gap-1.5 text-[12px] font-medium"><span className={cn("status-dot", paused && "bg-muted-foreground")}/>{paused ? "Scan paused" : "Scanning Macintosh HD"}</div><div className="mono mt-0.5 text-[10px] text-muted-foreground">85,420 files/sec · 3.2s elapsed</div></div>
     <IconButton label={paused ? "Resume scan" : "Pause scan"} onClick={() => setPaused(!paused)}>{paused ? <Play/> : <Pause/>}</IconButton><IconButton label="Rescan"><RefreshCw/></IconButton>
-    <div className="toolbar-tools"><IconButton label="Show hidden space" onClick={() => onUtility("Hidden and purgeable APFS space is now visible")}><Eye/></IconButton><IconButton label="APFS snapshot history" onClick={() => onUtility("3 local APFS snapshots · 18.6 GB reclaimable")}><History/></IconButton><IconButton label="Sort largest first" onClick={() => onUtility("Items sorted by allocated size")}><ArrowDownWideNarrow/></IconButton><IconButton label="Focus visualization" onClick={onFocus}><Maximize2/></IconButton></div>
+    <div className="toolbar-tools"><IconButton label="APFS snapshot history" onClick={() => onUtility("3 local APFS snapshots · 18.6 GB reclaimable")}><History/></IconButton><IconButton label="Sort largest first" onClick={() => onUtility("Items sorted by allocated size")}><ArrowDownWideNarrow/></IconButton><IconButton label="Focus visualization" onClick={onFocus}><Maximize2/></IconButton></div>
+    <div className="segmented color-mode" aria-label="Treemap color mode"><button className={colorMode === "category" ? "selected" : ""} onClick={() => setColorMode("category")}>Category</button><button className={colorMode === "age" ? "selected" : ""} onClick={() => setColorMode("age")}>Age</button></div>
+    <Button variant={elevated ? "default" : "outline"} className="h-8 px-2.5 text-xs" onClick={() => { setElevated(!elevated); onUtility(elevated ? "Standard scan restored" : "Admin scan simulated · restricted space revealed"); }}><LockKeyhole/>{elevated ? "Elevated" : "Scan as Admin"}</Button>
     <div className="segmented ml-auto"><button className={view === "treemap" ? "selected" : ""} onClick={() => setView("treemap")}><Layers3/>TreeMap <kbd>⌘1</kbd></button><button className={view === "sunmap" ? "selected" : ""} onClick={() => setView("sunmap")}><CircleGauge/>SunMap <kbd>⌘2</kbd></button></div>
     <SearchBox query={query} setQuery={setQuery}/>
     <Button variant="outline" className="h-8 bg-background/45 px-2.5 text-xs" onClick={onCollector}><Archive/><span className="hidden 2xl:inline">{collectorCount ? `${collectorCount} items · ${formatSize(collectorSize)}` : "Collector"}</span>{collectorCount > 0 && <span className="counter-badge">{collectorCount}</span>}</Button>
