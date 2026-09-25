@@ -163,25 +163,25 @@ function NodeMenu({ node, children, onSelect, onDrill, onQuickLook, onStage }: a
   return <ContextMenu><ContextMenuTrigger asChild>{children}</ContextMenuTrigger><ContextMenuContent className="w-60"><ContextMenuItem onSelect={() => onSelect(node)}><FolderOpen className="mr-2 size-4"/>Reveal in Finder</ContextMenuItem><ContextMenuItem onSelect={() => onQuickLook(node)}><Eye className="mr-2 size-4"/>Quick Look<ContextMenuShortcut>Space</ContextMenuShortcut></ContextMenuItem><ContextMenuItem onSelect={() => navigator.clipboard?.writeText(`/Volumes/Macintosh HD/${node.name}`)}><Copy className="mr-2 size-4"/>Copy Path</ContextMenuItem><ContextMenuSeparator/><ContextMenuItem disabled={node.protected} onSelect={() => onStage(node)}><Archive className="mr-2 size-4"/>Add to Collector</ContextMenuItem><ContextMenuItem><Terminal className="mr-2 size-4"/>Open in Terminal</ContextMenuItem><ContextMenuItem><BrainCircuit className="mr-2 size-4"/>Ask Disk Advisor</ContextMenuItem>{node.type === "folder" && <ContextMenuItem onSelect={() => onDrill(node)}><Search className="mr-2 size-4"/>Scan Folder Only</ContextMenuItem>}<ContextMenuSeparator/><ContextMenuItem disabled={node.protected} className="text-destructive" onSelect={() => onStage(node)}><Trash2 className="mr-2 size-4"/>Move to Trash<ContextMenuShortcut>⌘⌫</ContextMenuShortcut></ContextMenuItem></ContextMenuContent></ContextMenu>;
 }
 
-function TreemapTile({ box, selected, onSelect, onDrill, onQuickLook, onStage, depth = 0 }: { box: TreemapBox; selected: DiskNode; onSelect: (node: DiskNode) => void; onDrill: (node: DiskNode) => void; onQuickLook: (node: DiskNode) => void; onStage: (node: DiskNode) => void; depth?: number }) {
+function TreemapTile({ box, selected, hoveredId, colorMode, onSelect, onDrill, onQuickLook, onStage, depth = 0 }: { box: TreemapBox; selected: DiskNode; hoveredId: string | null; colorMode: ColorMode; onSelect: (node: DiskNode) => void; onDrill: (node: DiskNode) => void; onQuickLook: (node: DiskNode) => void; onStage: (node: DiskNode) => void; depth?: number }) {
   const childBoxes = box.node.children?.length && depth < 2 && box.w > 9 && box.h > 9 ? layoutTreemap(box.node.children, 0, 0, 100, 100) : [];
   const isFolder = box.node.type === "folder";
   return <NodeMenu node={box.node} onSelect={onSelect} onDrill={onDrill} onQuickLook={onQuickLook} onStage={onStage}><div
     role="button" tabIndex={0} aria-label={`${box.node.name}, ${formatSize(box.node.size)}`}
-    className={cn("treemap-node group absolute overflow-hidden transition-[filter,transform] hover:z-10 hover:brightness-110 focus:z-20 focus:outline-none focus:ring-2 focus:ring-ring", categoryStyle[box.node.category], selected?.id === box.node.id && "z-20 ring-2 ring-selection ring-inset", depth > 0 && "nested-node", isFolder ? "folder-node" : "file-node")}
+    className={cn("treemap-node group absolute overflow-hidden transition-[filter,transform] hover:z-10 hover:brightness-110 focus:z-20 focus:outline-none focus:ring-2 focus:ring-ring", colorMode === "category" ? categoryStyle[box.node.category] : ageClass(box.node), selected?.id === box.node.id && "z-20 ring-2 ring-selection ring-inset", hoveredId === box.node.id && "cross-highlight", depth > 0 && "nested-node", isFolder ? "folder-node" : "file-node")}
     style={{ left: `${box.x}%`, top: `${box.y}%`, width: `${box.w}%`, height: `${box.h}%` }}
     onClick={(event) => { event.stopPropagation(); onSelect(box.node); }} onDoubleClick={(event) => { event.stopPropagation(); onDrill(box.node); }} onKeyDown={(event) => { if (event.key === "Enter") onDrill(box.node); }}>
     <span className="node-shine"/><span className={cn("node-label", depth > 0 && "compact")}><span className="node-icon">{isFolder?<Folder/>:<File/>}</span><b>{box.node.name}</b><small className="mono">{formatSize(box.node.size)}</small></span>
-    {childBoxes.length > 0 && <div className="treemap-children">{childBoxes.map((childBox) => <TreemapTile key={childBox.node.id} box={childBox} selected={selected} onSelect={onSelect} onDrill={onDrill} onQuickLook={onQuickLook} onStage={onStage} depth={depth + 1}/>)}</div>}
+    {childBoxes.length > 0 && <div className="treemap-children">{childBoxes.map((childBox) => <TreemapTile key={childBox.node.id} box={childBox} selected={selected} hoveredId={hoveredId} colorMode={colorMode} onSelect={onSelect} onDrill={onDrill} onQuickLook={onQuickLook} onStage={onStage} depth={depth + 1}/>)}</div>}
     <span className="node-tooltip"><b>{box.node.name}</b><span>{formatSize(box.node.size)} · {categoryLabel[box.node.category]}</span></span>
   </div></NodeMenu>;
 }
 
-function Treemap({ current, selected, onSelect, onDrill, onQuickLook, onStage }: any) {
+function Treemap({ current, selected, hoveredId, colorMode, onSelect, onDrill, onQuickLook, onStage }: any) {
   const nodes = current.children?.length ? current.children : [current];
   const boxes = layoutTreemap(nodes, 0, 0, 100, 100);
   return <div className="relative h-full w-full overflow-hidden bg-canvas p-2"><div className="relative h-full w-full overflow-hidden rounded-md bg-canvas-inner shadow-inner">
-    {boxes.map((box) => <TreemapTile key={box.node.id} box={box} selected={selected} onSelect={onSelect} onDrill={onDrill} onQuickLook={onQuickLook} onStage={onStage}/>)}
+    {boxes.map((box) => <TreemapTile key={box.node.id} box={box} selected={selected} hoveredId={hoveredId} colorMode={colorMode} onSelect={onSelect} onDrill={onDrill} onQuickLook={onQuickLook} onStage={onStage}/>)}
   </div></div>;
 }
 
