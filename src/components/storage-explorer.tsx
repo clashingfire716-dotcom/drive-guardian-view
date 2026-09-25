@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   Archive, ArrowDownWideNarrow, ArrowLeft, ArrowRight, Box, BrainCircuit, ChevronDown, ChevronRight, CircleGauge,
-  Cloud, Code2, Copy, Database, Eye, File, FileArchive, FileCheck2, Folder, FolderOpen,
-  HardDrive, History, Info, Layers3, ListFilter, Maximize2, Moon, PanelLeft, PanelRight,
+  Clock3, Cloud, Code2, Copy, Database, Eject, Eye, File, FileArchive, FileCheck2, Files, Folder, FolderOpen,
+  HardDrive, History, Info, Layers3, ListFilter, LockKeyhole, Maximize2, Moon, PanelLeft, PanelRight,
   Pause, Play, Plus, RefreshCw, Search, ShieldCheck, Sun, Terminal, Trash2, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,18 @@ const categoryFill: Record<Category, string> = {
   developer: "var(--developer)", system: "var(--system)", media: "var(--media)", apps: "var(--apps)", documents: "var(--documents)", other: "var(--other)"
 };
 const categoryLabel: Record<Category, string> = { developer: "Developer", system: "System", media: "Media", apps: "Apps", documents: "Documents", other: "Other" };
+type ColorMode = "category" | "age";
+const ageClass = (node: DiskNode) => node.safe ? "age-stale" : node.protected ? "age-recent" : node.category === "documents" || node.category === "media" ? "age-aging" : "age-cool";
+const ageFill = (node: DiskNode) => node.safe ? "var(--age-stale)" : node.protected ? "var(--age-recent)" : node.category === "documents" || node.category === "media" ? "var(--age-aging)" : "var(--age-cool)";
+const snapshotNodes: DiskNode[] = [
+  { id: "snapshot-1", name: "com.apple.TimeMachine.2026-09-24", size: 10.8e9, category: "system", type: "file", modified: "Sep 24, 2026 at 8:20 PM", accessed: "Sep 24, 2026 at 8:20 PM", safe: true },
+  { id: "snapshot-2", name: "com.apple.TimeMachine.2026-09-21", size: 5.1e9, category: "system", type: "file", modified: "Sep 21, 2026 at 4:12 PM", accessed: "Sep 21, 2026 at 4:12 PM", safe: true },
+  { id: "snapshot-3", name: "System Update Snapshot", size: 2.7e9, category: "system", type: "file", modified: "Sep 19, 2026 at 11:03 AM", accessed: "Sep 19, 2026 at 11:03 AM", safe: true },
+];
+const hiddenSpace: DiskNode = { id: "hidden-space", name: "(hidden space)", size: 14.6e9, category: "system", type: "folder", modified: "Sep 25, 2026 at 5:42 AM", accessed: "Sep 25, 2026 at 5:42 AM", protected: true, children: [
+  { id: "restricted-vm", name: "Restricted VM Images", size: 8.9e9, category: "system", type: "file", modified: "Sep 25, 2026 at 5:40 AM", accessed: "Sep 25, 2026 at 5:40 AM", protected: true },
+  { id: "restricted-index", name: "System Indexes", size: 5.7e9, category: "system", type: "folder", modified: "Sep 25, 2026 at 4:58 AM", accessed: "Sep 25, 2026 at 4:58 AM", protected: true },
+] };
 
 type TreemapBox = { node: DiskNode; x: number; y: number; w: number; h: number };
 function layoutTreemap(nodes: DiskNode[], x: number, y: number, w: number, h: number): TreemapBox[] {
