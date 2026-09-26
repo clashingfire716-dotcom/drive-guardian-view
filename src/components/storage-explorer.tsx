@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   Archive, ArrowDownWideNarrow, ArrowLeft, ArrowRight, Box, BrainCircuit, ChevronDown, ChevronRight, CircleGauge,
-  Clock3, Cloud, Code2, Copy, Database, Eject, Eye, File, FileArchive, FileCheck2, Files, Folder, FolderOpen,
+  Clock3, Cloud, Code2, Copy, Database, DiscEject, Eye, File, FileArchive, FileCheck2, Files, Folder, FolderOpen,
   HardDrive, History, Info, Layers3, ListFilter, LockKeyhole, Maximize2, Moon, PanelLeft, PanelRight,
   Pause, Play, Plus, RefreshCw, Search, ShieldCheck, Sun, Terminal, Trash2, X
 } from "lucide-react";
@@ -115,14 +115,14 @@ function Sidebar({ collapsed, currentLens, setLens, onScan, onRecent, onEject }:
       <span className="drive-icon"><SourceIcon type="disk"/></span><span className="min-w-0 flex-1 text-left"><b>Macintosh HD</b><small>642 GB of 994 GB</small></span>
     </button>
     <div className="storage-meter mx-2 mb-3"><span style={{ width: "64.6%" }}/></div>
-    <div className="source-row group"><span className="drive-icon"><SourceIcon type="external"/></span><button className="min-w-0 flex-1 text-left" onClick={() => setLens("external")}><b>Samsung T7</b><small>1.14 TB of 2 TB</small></button><IconButton label="Eject Samsung T7" onClick={onEject}><Eject className="size-3.5"/></IconButton></div>
+    <div className="source-row group"><span className="drive-icon"><SourceIcon type="external"/></span><button className="min-w-0 flex-1 text-left" onClick={() => setLens("external")}><b>Samsung T7</b><small>1.14 TB of 2 TB</small></button><IconButton label="Eject Samsung T7" onClick={onEject}><DiscEject className="size-3.5"/></IconButton></div>
     <button className="source-row"><span className="drive-icon"><SourceIcon type="cloud"/></span><span className="min-w-0 flex-1 text-left"><b>iCloud Drive</b><small>126 GB used</small></span></button>
     <p className="section-label mt-5">Smart Lenses</p>
     <div className="space-y-0.5">
       {lenses.map(([id, label, detail, Icon]) => <button key={id} className={cn("lens-row", currentLens === id && "lens-row-active")} onClick={() => setLens(id)}><Icon className="size-[17px]"/><span className="flex-1 truncate text-left">{label}</span><small>{detail}</small></button>)}
     </div>
     <p className="section-label mt-5">Recent Scans</p>
-    <div className="space-y-0.5">{[["downloads","~/Downloads"],["developer","~/Developer"],["caches","~/Library/Caches"]].map(([id,label]) => <button key={id} className="recent-row" onClick={() => onRecent(id)}><Clock3/><span>{label}</span><ChevronRight/></button>)}</div>
+    <div className="space-y-0.5">{([["downloads","~/Downloads"],["developer","~/Developer"],["caches","~/Library/Caches"]] as [string, string][]).map(([id,label]) => <button key={id} className="recent-row" onClick={() => onRecent(id)}><Clock3/><span>{label}</span><ChevronRight/></button>)}</div>
     <div className="mt-auto pt-4"><Button variant="outline" className="h-9 w-full justify-start bg-background/30 text-[13px]" onClick={onScan}><Plus/>Scan Folder…</Button></div>
   </aside>;
 }
