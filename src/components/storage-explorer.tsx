@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "motion/react";
 import {
   Archive, ArrowLeft, ArrowRight, ArrowUpFromLine, Box, BrainCircuit, ChevronDown, ChevronRight, CircleGauge,
   Clock3, Cloud, Code2, Copy, Database, Eye, File, FileArchive, FileCheck2, Files, Folder, FolderOpen,
-  HardDrive, History, Info, Layers3, ListFilter, PanelLeft, PanelRight,
+  HardDrive, History, Info, Layers3, ListFilter, Moon, PanelLeft, PanelRight,
   Plus, Search, ShieldCheck, Terminal, Trash2, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
