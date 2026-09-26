@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
-  Archive, ArrowDownWideNarrow, ArrowLeft, ArrowRight, Box, BrainCircuit, ChevronDown, ChevronRight, CircleGauge,
-  Clock3, Cloud, Code2, Copy, Database, DiscEject, Eye, File, FileArchive, FileCheck2, Files, Folder, FolderOpen,
+  Archive, ArrowDownWideNarrow, ArrowLeft, ArrowRight, ArrowUpFromLine, Box, BrainCircuit, ChevronDown, ChevronRight, CircleGauge,
+  Clock3, Cloud, Code2, Copy, Database, Eye, File, FileArchive, FileCheck2, Files, Folder, FolderOpen,
   HardDrive, History, Info, Layers3, ListFilter, LockKeyhole, Maximize2, Moon, PanelLeft, PanelRight,
   Pause, Play, Plus, RefreshCw, Search, ShieldCheck, Sun, Terminal, Trash2, X
 } from "lucide-react";
@@ -115,7 +115,7 @@ function Sidebar({ collapsed, currentLens, setLens, onScan, onRecent, onEject }:
       <span className="drive-icon"><SourceIcon type="disk"/></span><span className="min-w-0 flex-1 text-left"><b>Macintosh HD</b><small>642 GB of 994 GB</small></span>
     </button>
     <div className="storage-meter mx-2 mb-3"><span style={{ width: "64.6%" }}/></div>
-    <div className="source-row group"><span className="drive-icon"><SourceIcon type="external"/></span><button className="min-w-0 flex-1 text-left" onClick={() => setLens("external")}><b>Samsung T7</b><small>1.14 TB of 2 TB</small></button><IconButton label="Eject Samsung T7" onClick={onEject}><DiscEject className="size-3.5"/></IconButton></div>
+    <div className="source-row group"><span className="drive-icon"><SourceIcon type="external"/></span><button className="min-w-0 flex-1 text-left" onClick={() => setLens("external")}><b>Samsung T7</b><small>1.14 TB of 2 TB</small></button><IconButton label="Eject Samsung T7" onClick={onEject}><ArrowUpFromLine className="size-3.5"/></IconButton></div>
     <button className="source-row"><span className="drive-icon"><SourceIcon type="cloud"/></span><span className="min-w-0 flex-1 text-left"><b>iCloud Drive</b><small>126 GB used</small></span></button>
     <p className="section-label mt-5">Smart Lenses</p>
     <div className="space-y-0.5">
